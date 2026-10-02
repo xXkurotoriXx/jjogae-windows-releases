@@ -1,12 +1,14 @@
 # 검증 안내
 
-Windows 0.4.14 릴리스는 같은 소스를 두 Windows 환경에서 독립적으로 빌드하고 검사합니다. [Windows build](https://github.com/xXkurotoriXx/jjogae-windows-source/actions/workflows/windows-build.yml)에서 결과를 확인할 수 있습니다. 실행 파일·SHA-256 체크섬·검사 보고서는 [최신 릴리스](https://github.com/xXkurotoriXx/jjogae-windows-releases/releases)에 포함됩니다.
+Windows 릴리스는 같은 소스를 두 Windows 작업에서 독립적으로 빌드하고 검사합니다. [Windows build](https://github.com/xXkurotoriXx/jjogae-windows-releases/actions/workflows/windows-build.yml)에서 결과를 확인할 수 있습니다. 실행 파일·SHA-256 체크섬은 [최신 릴리스](https://github.com/xXkurotoriXx/jjogae-windows-releases/releases)에 포함됩니다. 검사 보고서와 화면 캡처는 CI 아티팩트에서 3일 동안 받을 수 있습니다.
 
 ## 검사 범위
 
 - 치즈·방송·카페 데이터 파싱, 중복 방지와 백업 복원
 - 방송 시각·분할 영상·날짜 경계와 시간 합계
 - 공개 이용 불가 영상 확인과 관련 기록 정리
+- 카페 공지 삭제 응답, 저장·읽음·알림 식별값 정리와 재조회 시 복원 방지
+- 조회 후 삭제된 공지의 복원 차단, 취소·권한 오류·통신 실패와 재시도
 - YouTube 공개 정보와 개인 구독·멤버십 연결
 - 계정 프로필과 로그인 브라우저 재진입
 - Windows 알림과 시작프로그램 등록·해제

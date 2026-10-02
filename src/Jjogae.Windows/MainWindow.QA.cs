@@ -32,6 +32,7 @@ public sealed partial class MainWindow
         Check(AppInstallation.StartupCommand(@"C:\Test Folder\JjogaeStatus.exe") == "\"C:\\Test Folder\\JjogaeStatus.exe\" --startup", "startup command safely quotes paths with spaces");
         VerifyStartupRegistration(Check);
         await VerifyPublicUpdates(Check);
+        await VerifyCafeDeletion(Check);
         VerifyStorageMaintenance(Check);
         var toastEntry = new Notification("fixture", "카페", "새 공지", "<공지> & 이모지 🫧❤️", DateTimeOffset.Now, DateTimeOffset.Now);
         var toastXml = System.Xml.Linq.XDocument.Parse(WindowsNotifications.Content(toastEntry).GetContent());
@@ -119,6 +120,7 @@ public sealed partial class MainWindow
         var recoveryAt = new DateTimeOffset(Channel.Today.ToDateTime(new TimeOnly(10, 0)), TimeSpan.FromHours(9));
         var recoveryArticles = new[] { new CafePost("recover-one", "복구할 공지", Channel.Name, "공지", true, recoveryAt, Channel.CafeUrl), new CafePost("recover-two", "복구할 루파 글", Channel.Name, "자유게시판", false, recoveryAt, Channel.CafeUrl) };
         var previousCafeCount = app.State.Cafe.Count;
+        app.CafeAvailabilityTest = (_, _) => Task.FromResult(CafeArticleAvailability.Available);
         app.SeedRecoveryCheck(new(new(Channel.Today.AddDays(-6), Channel.Today, CafeHistoryScope.Notice), recoveryArticles, 1, 2, "")); Render(); await Settle();
         Check(app.State.Cafe.Count == previousCafeCount, "preview preserves cafe collection");
         selectedRecovery.Add("recover-one"); Render(); await Settle(); Capture(screenshotDirectory, "cafe-recovery");
@@ -132,6 +134,7 @@ public sealed partial class MainWindow
         Descendants<Button>(content).Single(b => b.Content is string label && label.StartsWith("선택 복구")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent)); await Settle();
         Check(app.State.Cafe.Any(x => x.Id == "recover-one") && app.State.Cafe.All(x => x.Id != "recover-two"), "UI restores selected cafe article only");
         Check(app.State.Pending.Count == 0, "restoration creates no historical alerts");
+        app.CafeAvailabilityTest = null;
         Descendants<ComboBox>(content).Single(c => c.Items.Contains("직접 선택")).SelectedItem = "직접 선택"; await Settle();
         Check(Descendants<DatePicker>(content).Count() == 2 && app.Recovery is null, "custom cafe range exposes both dates and clears stale preview"); Capture(screenshotDirectory, "cafe-recovery-custom");
         Descendants<Button>(content).Single(b => Equals(b.Tag, "recovery-toggle")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent)); await Settle();

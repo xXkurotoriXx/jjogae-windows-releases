@@ -201,18 +201,18 @@ public sealed class ApiClient : IDisposable
             throw new InvalidDataException("카페 공지 목록을 확인하지 못했습니다.");
     }
 
-    public async Task<bool> CafeDeleted(string id, CancellationToken token = default)
+    public async Task<CafeArticleAvailability> CafeAvailabilityCheck(string id, CancellationToken token = default)
     {
-        if (CafeAvailability.Url(id) is not { } url) return false;
+        if (CafeAvailability.Url(id) is not { } url) return CafeArticleAvailability.Unknown;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token); timeout.CancelAfter(TimeSpan.FromSeconds(8));
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Referrer = new Uri(Channel.CafeUrl);
         if (CookieHeader is not null && await CookieHeader(new Uri(url)) is { Length: > 0 } cookies) request.Headers.TryAddWithoutValidation("Cookie", cookies);
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
-        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound) return false;
+        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound) return CafeArticleAvailability.Unknown;
         await response.Content.LoadIntoBufferAsync(1024 * 1024, timeout.Token);
         using var root = JsonDocument.Parse(await response.Content.ReadAsStringAsync(timeout.Token));
-        return CafeAvailability.IsDeleted(root.RootElement, (int)response.StatusCode);
+        return CafeAvailability.Parse(root.RootElement, (int)response.StatusCode, id);
     }
 
     public async Task<CafeHistoryPage> CafeHistoryPage(int page, CancellationToken token = default)

@@ -50,7 +50,9 @@ public sealed class CafeRecoveryCandidates
     public CafeRecoveryCandidates(AppState state, CafeHistoryQuery query, IEnumerable<CafePost> fetched)
     {
         var saved = state.Cafe.Select(x => x.Id).ToHashSet();
-        var combined = fetched.Concat(state.Cafe).GroupBy(x => x.Id)
+        // The caller supplies live-verified articles, including any saved read posts.
+        // Never add cached state back into a validated recovery preview.
+        var combined = fetched.GroupBy(x => x.Id)
             .Select(g => g.First() with { Notice = g.Any(x => x.Notice) }).Where(query.Matches).ToArray();
         AlreadyVisible = combined.Count(x => saved.Contains(x.Id) && !state.ReadCafe.Contains(x.Id));
         Articles = combined.Where(x => !saved.Contains(x.Id) || state.ReadCafe.Contains(x.Id)).OrderByDescending(x => x.At).ThenBy(x => x.Id, StringComparer.Ordinal).ToArray();

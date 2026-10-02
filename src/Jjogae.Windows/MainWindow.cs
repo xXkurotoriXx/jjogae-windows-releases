@@ -84,6 +84,7 @@ public sealed partial class MainWindow : Window
             ToastNotificationManagerCompat.OnActivated += NotificationActivated;
             windowsNotifications.Changed += UpdateNotificationStatus;
             windowsNotifications.Failed += app.RetryNotification;
+            app.CafePostDeleted += windowsNotifications.RemoveCafe;
             tray.Text = Title;
             using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/AppIcon.ico"))!.Stream;
             tray.Icon = new System.Drawing.Icon(stream); tray.Visible = true;
@@ -105,6 +106,7 @@ public sealed partial class MainWindow : Window
             ToastNotificationManagerCompat.OnActivated -= NotificationActivated;
             windowsNotifications.Changed -= UpdateNotificationStatus;
             windowsNotifications.Failed -= app.RetryNotification;
+            app.CafePostDeleted -= windowsNotifications.RemoveCafe;
         };
         Closed += (_, _) => { backgroundClosed = true; glassSource?.RemoveHook(GlassMessages); FlushBackgroundPreferences(); tray.Visible = false; tray.ContextMenuStrip?.Dispose(); tray.Dispose(); app.Changed -= ModelChanged; app.Notify -= ShowNotification; SystemEvents.UserPreferenceChanged -= PreferencesChanged; };
         SystemEvents.UserPreferenceChanged += PreferencesChanged;

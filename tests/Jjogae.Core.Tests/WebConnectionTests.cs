@@ -54,7 +54,7 @@ static class WebConnectionTests
         var notices = await api.Cafe();
         check(notices.Count == 1 && notices.All(x => x.Notice), "notice board and pinned notices merged");
         check(calls.Count == 2 && calls.Any(x => x.Contains("/menus/22/articles")) && calls.All(x => !x.Contains("/menus/0/articles")), "ordinary cafe board is not fetched");
-        check(await api.CafeDeleted("123"), "explicit 404 deletion processed through HTTP client");
+        check(await api.CafeAvailabilityCheck("123") == CafeArticleAvailability.Deleted, "explicit 404 deletion processed through HTTP client");
         var state = new AppState { Cafe = notices, ReadCafe = ["123"], SeenCafe = ["123"], YouTubeWeb = active };
         Policies.QueueNotification(state, new("cafe:123", "카페", "새 공지", "공지 제목", now, now), false);
         state.Pending.Add(new("cafe:123", "카페", "새 공지", "공지 제목", now, now));

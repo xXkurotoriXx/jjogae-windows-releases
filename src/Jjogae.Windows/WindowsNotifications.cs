@@ -63,6 +63,15 @@ internal sealed class WindowsNotifications
             return false;
         }
     }
+    internal void RemoveCafe(string id)
+    {
+        try
+        {
+            var tag = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("cafe:" + id)))[..16];
+            ToastNotificationManagerCompat.History.Remove(tag, "jjogae");
+        }
+        catch (Exception) { SetStatus("삭제된 공지의 Windows 알림을 정리하지 못했습니다. 알림 센터에서 지워 주세요."); }
+    }
     private void SetStatus(string value) { Status = value; Changed?.Invoke(); }
     // Explicit local diagnostic only: normal CI smoke tests never register or send real toasts.
     internal static async Task<string> VerifyNativeDelivery()

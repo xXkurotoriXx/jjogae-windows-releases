@@ -126,6 +126,7 @@ await YouTubeTests.RunNetwork(Check);
 await ParityTests.Run(Check);
 MacParityTests.Run(Check);
 await WebConnectionTests.Run(Check);
+await CafeDeletionTests.Run(Check);
 if (args.Contains("--youtube-live"))
 {
     using var api = new ApiClient();

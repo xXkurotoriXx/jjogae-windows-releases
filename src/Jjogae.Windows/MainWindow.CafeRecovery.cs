@@ -55,7 +55,7 @@ public sealed partial class MainWindow
             selectedRecovery.IntersectWith(candidates.Articles.Select(x => x.Id));
             panel.Children.Add(Text($"불러올 글 {candidates.NewCount:N0}개 · 읽은 글 {candidates.SavedReadCount:N0}개 · 목록에 있는 글 {candidates.AlreadyVisible:N0}개", 12, secondary: true));
             if (result.Warning.Length > 0) panel.Children.Add(Text(result.Warning, 12, secondary: true));
-            var restore = Button($"선택 복구 {selectedRecovery.Count:N0}개", () => { app.RestoreCafe(selectedRecovery.ToArray()); selectedRecovery.Clear(); Render(); });
+            var restore = Button($"선택 복구 {selectedRecovery.Count:N0}개", async () => { var pending = app.RestoreCafe(selectedRecovery.ToArray()); Render(); await pending; selectedRecovery.Clear(); Render(); });
             restore.IsEnabled = selectedRecovery.Count > 0 && !app.RecoveryBusy;
             var selectAll = Button("결과 전체 선택", () => { selectedRecovery.UnionWith(candidates.Articles.Select(x => x.Id)); Render(); }); selectAll.IsEnabled = candidates.Articles.Length > 0;
             panel.Children.Add(Row(selectAll, Button("선택 해제", () => { selectedRecovery.Clear(); Render(); }), restore));

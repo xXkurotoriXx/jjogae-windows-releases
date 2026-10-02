@@ -25,8 +25,11 @@ public sealed class AppController : IDisposable
     }
     public event Action? Changed;
     public event Func<Notification, bool>? Notify;
+    public event Action<string>? CafePostDeleted;
     private readonly NotificationDelivery notificationDelivery = new();
-    private readonly ApiClient api = new();
+    private readonly ApiClient api;
+    private readonly bool cafeTestTransport;
+    internal Func<string, CancellationToken, Task<CafeArticleAvailability>>? CafeAvailabilityTest { get; set; }
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(15) };
     private readonly SemaphoreSlim cafeGate = new(1, 1);
     private DateTimeOffset lastFull = DateTimeOffset.MinValue;
@@ -39,8 +42,11 @@ public sealed class AppController : IDisposable
     private YouTubeWindow? youtube;
     private readonly Dictionary<string, DateTimeOffset> cafeChecks = [];
 
-    public AppController(string directory, bool test)
+    public AppController(string directory, bool test) : this(directory, test, null) { }
+    internal AppController(string directory, bool test, ApiClient? testApi)
     {
+        if (!test && testApi is not null) throw new InvalidOperationException("Cafe transport fixtures require an isolated test profile.");
+        api = testApi ?? new(); cafeTestTransport = testApi is not null;
         IsTest = test; Store = new StateStore(directory); State = Store.Load();
         Thumbnails = new BroadcastThumbnails(directory);
         if (!test) { CafeAvailability.Purge(State, State.Cafe.Where(x => !x.Notice).Select(x => x.Id).ToArray()); Store.Save(State); }
@@ -161,17 +167,22 @@ public sealed class AppController : IDisposable
 
     public async Task RefreshCafe()
     {
-        if (IsTest || State.Account is null || !await cafeGate.WaitAsync(0)) return;
+        if (IsTest && !cafeTestTransport || State.Account is null || !await cafeGate.WaitAsync(0)) return;
         var generation = authenticationGeneration; var token = lifetime.Token;
         try
         {
             lastCafe = DateTimeOffset.UtcNow;
             var articles = await api.Cafe(token: token);
             if (generation != authenticationGeneration || token.IsCancellationRequested) return;
-            Policies.MergeCafe(State, articles.Where(x => x.Notice), DateTimeOffset.UtcNow); Save();
-            var listed = articles.Select(x => x.Id).ToHashSet();
             var now = DateTimeOffset.UtcNow;
-            var candidates = State.Cafe.Where(x => !listed.Contains(x.Id) && CafeAvailability.Url(x.Id) is not null
+            var saved = State.Cafe.Select(x => x.Id).ToHashSet();
+            // A stale list must not recreate a previously purged post. Check every new
+            // article before saving it, and rotate through saved posts even if listed.
+            var incoming = articles.Where(x => x.Notice).DistinctBy(x => x.Id).ToArray();
+            var verified = await VerifyCafe(incoming.Where(x => !saved.Contains(x.Id)), generation, token);
+            if (generation != authenticationGeneration || token.IsCancellationRequested) return;
+            Policies.MergeCafe(State, incoming.Where(x => saved.Contains(x.Id)).Concat(verified.Available), now); Save();
+            var candidates = State.Cafe.Where(x => CafeAvailability.Url(x.Id) is not null
                 && (!cafeChecks.TryGetValue(x.Id, out var check) || now - check >= TimeSpan.FromMinutes(10)))
                 .OrderBy(x => cafeChecks.GetValueOrDefault(x.Id)).Take(3).Select(x => x.Id).ToArray();
             foreach (var id in candidates)
@@ -179,10 +190,9 @@ public sealed class AppController : IDisposable
                 cafeChecks[id] = now;
                 try
                 {
-                    var deleted = await api.CafeDeleted(id, token);
+                    var availability = await CheckCafeAvailability(id, token);
                     if (generation != authenticationGeneration || token.IsCancellationRequested) return;
-                    if (!deleted) continue;
-                    CancelRecovery(); CafeAvailability.Purge(State, [id]); cafeChecks.Remove(id); Save();
+                    if (availability == CafeArticleAvailability.Deleted) PurgeCafe(id);
                 }
                 catch (Exception) when (!token.IsCancellationRequested) { /* A failed check never removes a post. */ }
             }
@@ -261,6 +271,22 @@ public sealed class AppController : IDisposable
         Recovery = null; RecoveryBusy = false;
     }
     public CafeRecoveryCandidates? RecoveryCandidates => Recovery is { } result ? new(State, result.Query, result.Articles) : null;
+    private Task<CafeArticleAvailability> CheckCafeAvailability(string id, CancellationToken token) =>
+        IsTest && CafeAvailabilityTest is { } fixture ? fixture(id, token) : api.CafeAvailabilityCheck(id, token);
+    private void PurgeCafe(string id)
+    {
+        CafeAvailability.Purge(State, [id]); cafeChecks.Remove(id);
+        if (Recovery is { } result) Recovery = result with { Articles = result.Articles.Where(x => x.Id != id).ToArray() };
+        Save();
+        if (!IsTest) CafePostDeleted?.Invoke(id);
+    }
+    private Task<CafeVerifiedArticles> VerifyCafe(IEnumerable<CafePost> articles, int generation, CancellationToken token) =>
+        CafeAvailability.Verify(articles, CheckCafeAvailability, token, (id, availability) =>
+        {
+            if (generation != authenticationGeneration || token.IsCancellationRequested) return;
+            if (availability == CafeArticleAvailability.Deleted) PurgeCafe(id);
+            else cafeChecks[id] = DateTimeOffset.UtcNow;
+        });
     internal void SeedRecoveryCheck(CafeHistoryResult result)
     {
         if (!IsTest) throw new InvalidOperationException("Recovery fixtures require an isolated test profile.");
@@ -277,20 +303,42 @@ public sealed class AppController : IDisposable
         var cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token); recoveryCancellation = cancellation;
         var generation = authenticationGeneration;
         Report("과거 글을 조회하는 중…");
+        var locked = false;
         try
         {
             var result = await CafeHistoryLoader.Fetch(query, previous?.NextPage ?? 1, api.CafeHistoryPage, cancellation.Token);
+            await cafeGate.WaitAsync(cancellation.Token); locked = true;
             if (generation != authenticationGeneration || cancellation.IsCancellationRequested || !ReferenceEquals(recoveryCancellation, cancellation)) return;
-            Recovery = result with { Articles = result.Articles.Concat(previous?.Articles ?? []).DistinctBy(x => x.Id).OrderByDescending(x => x.At).ToArray(), PagesFetched = result.PagesFetched + (previous?.PagesFetched ?? 0) };
+            var verified = await VerifyCafe(result.Articles.Concat(previous?.Articles ?? []).Concat(State.Cafe).Where(query.Matches), generation, cancellation.Token);
+            if (generation != authenticationGeneration || cancellation.IsCancellationRequested || !ReferenceEquals(recoveryCancellation, cancellation)) return;
+            var warning = verified.UnverifiedCount > 0 ? $"현재 열람 여부를 확인하지 못한 글 {verified.UnverifiedCount:N0}개는 제외했습니다. 로그인과 연결 상태를 확인한 후 다시 조회해 주세요." : "";
+            Recovery = result with { Articles = verified.Available.OrderByDescending(x => x.At).ToArray(), PagesFetched = result.PagesFetched + (previous?.PagesFetched ?? 0), Warning = string.Join(" ", new[] { result.Warning, warning }.Where(x => x.Length > 0)) };
             Report("조회가 끝났습니다. 복구할 글을 선택해 주세요.");
         }
         catch (OperationCanceledException) { }
-        finally { if (ReferenceEquals(recoveryCancellation, cancellation)) { RecoveryBusy = false; DataRevision++; Changed?.Invoke(); } }
+        finally { if (locked) cafeGate.Release(); if (ReferenceEquals(recoveryCancellation, cancellation)) { RecoveryBusy = false; DataRevision++; Changed?.Invoke(); } }
     }
-    public void RestoreCafe(IEnumerable<string> selected)
+    public async Task RestoreCafe(IEnumerable<string> selected)
     {
-        var count = RecoveryCandidates?.Restore(State, selected) ?? 0;
-        Save(); Report($"{count:N0}개 글을 복구했습니다.");
+        if (RecoveryBusy || Recovery is null || State.Account is null && !IsTest) return;
+        var ids = selected.ToHashSet(); var posts = RecoveryCandidates!.Articles.Where(x => ids.Contains(x.Id)).ToArray();
+        var cancellation = recoveryCancellation ??= CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        var generation = authenticationGeneration; var locked = false;
+        RecoveryBusy = true; Report("선택한 글의 열람 여부를 다시 확인하는 중…");
+        try
+        {
+            await cafeGate.WaitAsync(cancellation.Token); locked = true;
+            if (generation != authenticationGeneration || cancellation.IsCancellationRequested || !ReferenceEquals(recoveryCancellation, cancellation)) return;
+            var verified = await VerifyCafe(posts, generation, cancellation.Token);
+            if (generation != authenticationGeneration || cancellation.IsCancellationRequested || !ReferenceEquals(recoveryCancellation, cancellation)) return;
+            // Drop unverified previews as well; they may be retried with a fresh query.
+            var available = verified.Available.Select(x => x.Id).ToHashSet();
+            if (Recovery is { } result) Recovery = result with { Articles = result.Articles.Where(x => !ids.Contains(x.Id) || available.Contains(x.Id)).ToArray() };
+            Policies.MergeCafe(State, verified.Available, DateTimeOffset.UtcNow, true); Save();
+            Report($"{verified.Available.Count:N0}개 글을 복구했습니다." + (verified.UnverifiedCount > 0 ? " 열람 여부를 확인하지 못한 글은 제외했습니다. 다시 조회해 주세요." : ""));
+        }
+        catch (OperationCanceledException) { }
+        finally { if (locked) cafeGate.Release(); if (ReferenceEquals(recoveryCancellation, cancellation)) { RecoveryBusy = false; DataRevision++; Changed?.Invoke(); } }
     }
     public async Task LoadBroadcastHistory()
     {
@@ -360,6 +408,7 @@ public sealed class AppController : IDisposable
     }
     internal void RetryNotification(Notification entry)
     {
+        if (entry.Id.StartsWith("cafe:", StringComparison.Ordinal) && !State.Cafe.Any(x => x.Id == entry.Id[5..])) return;
         if (State.Settings.Notifications && !entry.Id.StartsWith("test:", StringComparison.Ordinal) && State.Pending.All(x => x.Id != entry.Id)) State.Pending.Insert(0, entry);
     }
     public void SetNotifications(bool enabled)
