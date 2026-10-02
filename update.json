@@ -1,12 +1,12 @@
 {
-  "version": "0.4.16",
+  "version": "0.4.17",
   "platform": "windows-x64",
-  "publishedAt": "2026-10-02T04:39:53.398Z",
-  "downloadUrl": "https://github.com/xXkurotoriXx/jjogae-windows-releases/releases/download/v0.4.16/JjogaeStatus.exe",
-  "checksumsUrl": "https://github.com/xXkurotoriXx/jjogae-windows-releases/releases/download/v0.4.16/SHA256SUMS.txt",
-  "size": 83096686,
-  "sha256": "990bc3e38b27a4b430761655a7a174a84dc7f12437f4386efbeeec0253f0303f",
+  "publishedAt": "2026-10-02T05:18:41.254Z",
+  "downloadUrl": "https://github.com/xXkurotoriXx/jjogae-windows-releases/releases/download/v0.4.17/JjogaeStatus.exe",
+  "checksumsUrl": "https://github.com/xXkurotoriXx/jjogae-windows-releases/releases/download/v0.4.17/SHA256SUMS.txt",
+  "size": 83105572,
+  "sha256": "d4d6b66244de7b5a9fd306741b29ab77f56d8d659f5be8aa07fbddea7abbd71c",
   "minimumManualMigrationVersion": "0.4.15",
-  "sourceCommit": "4ced67a0759979d2f58d0e8cc07f0742a30608b2",
-  "verificationRun": "36965247323"
+  "sourceCommit": "bced01e1bc4c1d8f1b2564ca579466ed70a315fa",
+  "verificationRun": "36968078471"
 }
