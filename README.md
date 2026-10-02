@@ -32,3 +32,16 @@ Windows 10/11 x64에서 사용합니다. .NET을 별도로 설치할 필요가 �
 [설치·자동 업데이트·제거·데이터 삭제 안내](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/INSTALLATION.md)
 
 자동 업데이트가 켜져 있거나 수동 업데이트 확인을 실행하면, 새 안정 버전은 별도 설치 승인창 없이 설치되고 앱이 자동 재시작합니다. 자동 확인은 기본적으로 켜져 있으며 설정에서 끌 수 있습니다.
+
+## 소스와 빌드
+
+이 저장소에서 Windows 소스, 문서, 릴리스와 업데이트를 함께 관리합니다. .NET 10 SDK와 Node.js로 검증·빌드할 수 있습니다.
+
+```powershell
+dotnet run --project tests/Jjogae.Core.Tests -c Release
+node scripts/test-youtube-dom.mjs
+node scripts/audit-source.mjs
+dotnet publish src/Jjogae.Windows -c Release -r win-x64 --self-contained true -o artifacts/windows
+```
+
+[개발·릴리스 안내](docs/RELEASING.md) · [빌드 검증](docs/TESTING.md) · [이미지·상표 안내](docs/ASSETS.md)

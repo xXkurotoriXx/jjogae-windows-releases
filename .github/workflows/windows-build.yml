@@ -1,0 +1,75 @@
+name: Windows build
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        verification: [1, 2]
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Audit source
+        run: node scripts/audit-source.mjs
+      - name: Core tests
+        run: dotnet run --project tests/Jjogae.Core.Tests -c Release
+      - name: YouTube DOM fixtures
+        run: node scripts/test-youtube-dom.mjs
+      - name: Build Windows executable
+        run: dotnet publish src/Jjogae.Windows -c Release -r win-x64 --self-contained true -o artifacts/windows
+      - name: Clean launch smoke test
+        shell: pwsh
+        run: |
+          $process = Start-Process artifacts/windows/JjogaeStatus.exe -ArgumentList '--smoke-test','--report','artifacts/windows/smoke-test.txt','--screenshots','artifacts/windows/qa' -PassThru
+          if (-not $process.WaitForExit(240000)) { $process.Kill(); throw 'App did not finish its smoke test.' }
+          if (Test-Path artifacts/windows/smoke-test.txt) { Get-Content artifacts/windows/smoke-test.txt }
+          if ($process.ExitCode -ne 0) { throw 'App smoke test failed.' }
+          if (-not (Test-Path artifacts/windows/smoke-test.txt)) { throw 'Smoke test report is missing.' }
+      - name: macOS parity and emoji regression checks
+        shell: pwsh
+        run: |
+          $process = Start-Process artifacts/windows/JjogaeStatus.exe -ArgumentList '--parity-test','--report','artifacts/windows/parity-test.txt','--screenshots','artifacts/windows/parity-qa' -PassThru -WindowStyle Hidden
+          if (-not $process.WaitForExit(180000)) { $process.Kill(); throw 'Parity test timed out.' }
+          if (Test-Path artifacts/windows/parity-test.txt) { Get-Content artifacts/windows/parity-test.txt }
+          if ($process.ExitCode -ne 0 -or -not (Test-Path artifacts/windows/parity-test.txt)) { throw 'Parity test failed.' }
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash artifacts/windows/JjogaeStatus.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  JjogaeStatus.exe" | Set-Content artifacts/windows/SHA256SUMS.txt -Encoding utf8
+          Copy-Item README.md,PRIVACY.md,THIRD_PARTY_NOTICES.md artifacts/windows/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jjogae-windows-x64-verification-${{ matrix.verification }}
+          path: |
+            artifacts/windows/JjogaeStatus.exe
+            artifacts/windows/SHA256SUMS.txt
+            artifacts/windows/smoke-test.txt
+            artifacts/windows/parity-test.txt
+            artifacts/windows/README.md
+            artifacts/windows/PRIVACY.md
+            artifacts/windows/THIRD_PARTY_NOTICES.md
+            artifacts/windows/qa/*.png
+            artifacts/windows/parity-qa/*.png
+          retention-days: 3
+          if-no-files-found: error
