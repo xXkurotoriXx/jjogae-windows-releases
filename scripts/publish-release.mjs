@@ -71,7 +71,11 @@ export async function publishRelease({ directory = '.', environment = process.en
   for (const name of ['smoke-test.txt', 'parity-test.txt']) {
     const report = fs.readFileSync(path.join(files, name), 'utf8');
     const checks = report.replace(/^\uFEFF/, '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-    requireValue(checks.length > 0 && checks.every(line => /^PASS:\s+\S/.test(line)), `CI report failed: ${name}`);
+    const passed = checks.filter(line => /^PASS:\s+\S/.test(line));
+    const renderDetails = checks.filter(line => name === 'smoke-test.txt'
+      && /^Rendered desktop: [1-9]\d* x [1-9]\d*; narrow: 920 x 720; additional 150% bitmap render\.$/.test(line));
+    requireValue(passed.length > 0 && renderDetails.length <= 1 && passed.length + renderDetails.length === checks.length,
+      `CI report failed: ${name}`);
   }
   const notes = read('RELEASE_NOTES.md').toString('utf8').replace(/^#[^\n]*\n+/, '').trim();
   requireValue(notes.length > 0, 'Release notes required');

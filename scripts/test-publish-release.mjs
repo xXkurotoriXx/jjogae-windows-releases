@@ -164,6 +164,32 @@ test('empty or malformed reports cannot hide failed lines among successful check
   }
 });
 
+test('actual smoke render metadata is accepted alongside passing checks', async t => {
+  const { run, state, output } = fixture(t);
+  fs.writeFileSync(path.join(output, 'smoke-test.txt'), 'PASS: clean launch\r\n'
+    + 'Rendered desktop: 1044 x 788; narrow: 920 x 720; additional 150% bitmap render.\r\n'
+    + 'PASS: cheese page size control\r\n');
+  await run(); assert.deepEqual(state.deleted, [17]);
+});
+
+test('render metadata alone or in parity reports cannot substitute for successful tests', async t => {
+  const metadata = 'Rendered desktop: 1044 x 788; narrow: 920 x 720; additional 150% bitmap render.';
+  for (const [name, report] of [['smoke-test.txt', metadata], ['parity-test.txt', `PASS: parity fixture\n${metadata}\n`]]) {
+    const { run, state, output } = fixture(t); fs.writeFileSync(path.join(output, name), report);
+    await assert.rejects(run(), /CI report failed/); assert.equal(state.calls.length, 0);
+  }
+});
+
+test('smoke metadata allowance rejects failed checks, unknown lines and changed render formats', async t => {
+  const metadata = 'Rendered desktop: 1044 x 788; narrow: 920 x 720; additional 150% bitmap render.';
+  for (const addition of ['FAIL: hidden failure', 'unknown status', metadata,
+    metadata.replace('1044', '0'), metadata.replace('920', '921'), metadata.replace('150%', '100%')]) {
+    const { run, state, output } = fixture(t);
+    fs.writeFileSync(path.join(output, 'smoke-test.txt'), `PASS: fixture\n${metadata}\n${addition}\n`);
+    await assert.rejects(run(), /CI report failed/); assert.equal(state.calls.length, 0);
+  }
+});
+
 test('existing stable versions and newer releases cannot be overwritten', async t => {
   for (const tag of ['v0.5.0', 'v0.6.0']) {
     const { run, state } = fixture(t, [release(1, tag)]);
