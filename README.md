@@ -27,4 +27,8 @@ Windows 10/11 x64에서 사용합니다. .NET을 별도로 설치할 필요가 �
 
 설치 파일, SHA256SUMS.txt, 업데이트 정보만 공개 배포합니다. 앱 사용자 기록·로그인 정보는 배포에 포함하지 않습니다.
 
-[개인정보처리방침](PRIVACY.md) · [오픈소스 고지](THIRD_PARTY_NOTICES.md) · [오류 제보](https://github.com/xXkurotoriXx/jjogae-windows-releases/issues)
+[개인정보처리방침](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/PRIVACY.md) · [오픈소스 고지](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/THIRD_PARTY_NOTICES.md) · [오류 제보](https://github.com/xXkurotoriXx/jjogae-windows-releases/issues)
+
+[설치·자동 업데이트·제거·데이터 삭제 안내](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/INSTALLATION.md)
+
+자동 업데이트가 켜져 있거나 수동 업데이트 확인을 실행하면, 새 안정 버전은 별도 설치 승인창 없이 설치되고 앱이 자동 재시작합니다. 자동 확인은 기본적으로 켜져 있으며 설정에서 끌 수 있습니다.
