@@ -24,6 +24,11 @@ internal static class AppUpdateTests
         using var releases = JsonDocument.Parse(JsonSerializer.Serialize(new[] { Release("v0.4.4"), Release("v0.4.6"), Release("v0.4.7", true), Release("v0.4.8", digest:"bad"), Release("v0.4.9", name:"other.exe"), Release("v0.4.10", prerelease:true) }));
         check(AppUpdates.Select(releases.RootElement, new Version(0, 4, 5))?.Version == new Version(0, 4, 6), "public updates select newest verified stable release and exclude drafts and prereleases");
         check(AppUpdates.Select(releases.RootElement, new Version(0, 4, 6)) is null, "updater never downgrades or reinstalls current version");
+        using var launchReleases = JsonDocument.Parse(JsonSerializer.Serialize(new[] { Release("v0.5.0") }));
+        check(AppUpdates.Select(launchReleases.RootElement, new Version(0, 4, 17))?.Version == new Version(0, 5, 0), "current public installation can update to the launch release using only executable and checksums");
+        check(AppUpdates.Select(launchReleases.RootElement, new Version(0, 5, 0)) is null, "first installation of launch release does not reinstall itself");
+        using var nextReleases = JsonDocument.Parse(JsonSerializer.Serialize(new[] { Release("v0.5.0"), Release("v0.5.1"), Release("v0.5.2", prerelease: true) }));
+        check(AppUpdates.Select(nextReleases.RootElement, new Version(0, 5, 0))?.Version == new Version(0, 5, 1), "launch release selects the next verified stable public update");
         check(AppUpdates.MatchesChecksum("\uFEFF" + hash + "  JjogaeStatus.exe\r\n", hash), "release checksums accept UTF8 BOM and Windows line endings");
         check(!AppUpdates.MatchesChecksum(hash + "  other.exe", hash) && !AppUpdates.MatchesChecksum(new string('b', 64) + "  JjogaeStatus.exe", hash), "wrong asset or checksum blocks install");
         var directory = Path.Combine(Path.GetTempPath(), "Jjogae-update-test-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(directory);

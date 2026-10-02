@@ -6,7 +6,7 @@
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <PathMap>$(MSBuildThisFileDirectory)=/src/</PathMap>
-    <Version>0.4.17</Version>
+    <Version>0.5.0</Version>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
   </PropertyGroup>

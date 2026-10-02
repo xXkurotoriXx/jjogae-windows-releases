@@ -1,6 +1,6 @@
 # Third-party notices
 
-Windows 0.4.15 self-contained win-x64 distribution. Component licenses remain with their respective holders; this notice does not grant a new license to the application source or branding.
+Third-party components included in 쪼개 상황실 for Windows x64. Component licenses and copyrights belong to their respective holders.
 
 | Component | Version | License / notices |
 | --- | --- | --- |
@@ -12,8 +12,10 @@ Windows 0.4.15 self-contained win-x64 distribution. Component licenses remain wi
 | Stfu | 0.1.1 | Copyright 2017–2021 Sam Hocevar; [WTFPL version 2](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/Stfu-LICENSE.txt) |
 | Typography.OpenFont / Typography.GlyphLayout, included by Emoji.Wpf | upstream bundled source | [complete upstream MIT license and copyright](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/Typography-LICENSE.txt) |
 
-The Emoji.Wpf and Stfu package copyright notices above are retained from their 0.3.4 / 0.1.1 NuGet metadata. Full upstream license texts are reproduced unchanged in the linked files. JeremyAnsel.HLSL.Targets 1.0.13 and Microsoft.NET.ILLink.Tasks are build dependencies, not application runtime libraries; no separate build tool is installed by this executable.
+Full upstream license texts are available in the linked files.
 
-Microsoft Edge WebView2 Runtime is a separately installed Microsoft product and is governed by its own terms. The SDK license and notices above concern the components shipped in this app. Windows toast registration is local. Emoji rendering uses installed fonts; their licenses remain with the font providers. Third-party service names and logos identify their respective services and do not imply endorsement.
+Microsoft Edge WebView2 Runtime is a separately installed Microsoft product governed by its own terms. The SDK license and notices above concern the components shipped in this app. Emoji rendering uses installed fonts under their providers' licenses.
 
-Package versions were checked against the locked NuGet dependencies and the runtime packs used for the official release. The complete license files are also available from this repository so users need not access the private source repository.
+## 이미지와 상표
+
+앱 아이콘과 채널 이미지의 권리는 각 권리자에게 있습니다. 치지직·YouTube·네이버 카페의 이름과 로고는 연결되는 서비스를 식별하기 위해 표시합니다. 사용자가 선택한 배경 이미지는 화면 표시용 사본으로 보관합니다.

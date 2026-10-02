@@ -5,8 +5,5 @@
   "downloadUrl": "https://github.com/xXkurotoriXx/jjogae-windows-releases/releases/download/v0.4.17/JjogaeStatus.exe",
   "checksumsUrl": "https://github.com/xXkurotoriXx/jjogae-windows-releases/releases/download/v0.4.17/SHA256SUMS.txt",
   "size": 83105572,
-  "sha256": "d4d6b66244de7b5a9fd306741b29ab77f56d8d659f5be8aa07fbddea7abbd71c",
-  "minimumManualMigrationVersion": "0.4.15",
-  "sourceCommit": "bced01e1bc4c1d8f1b2564ca579466ed70a315fa",
-  "verificationRun": "36968078471"
+  "sha256": "d4d6b66244de7b5a9fd306741b29ab77f56d8d659f5be8aa07fbddea7abbd71c"
 }
