@@ -54,3 +54,7 @@
 ## 문의
 
 [문의 및 오류 제보](https://github.com/xXkurotoriXx/jjogae-windows-releases/issues)에 증상, 앱 버전과 Windows 버전을 적어 주세요.
+
+## Special Thanks for Windows ver.
+
+윈도우 프로그램을 검수해준 같은 학교 연구소 일반인 동기, 10년지기 친구
