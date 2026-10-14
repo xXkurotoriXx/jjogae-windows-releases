@@ -4,8 +4,8 @@ Third-party components included in 쪼개 상황실 for Windows x64. Component l
 
 | Component | Version | License / notices |
 | --- | --- | --- |
-| .NET Runtime | 10.0.12 | [MIT license](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/NET-Runtime-LICENSE.txt), [upstream third-party notices](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/NET-Runtime-NOTICES.txt) |
-| .NET Windows Desktop Runtime (WPF/Windows Forms) | 10.0.12 | [license](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/WindowsDesktop-LICENSE.txt); additional notices in the .NET Runtime notice file |
+| .NET Runtime | 10.0.13 | [MIT license](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/NET-Runtime-LICENSE.txt), [upstream third-party notices](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/NET-Runtime-NOTICES.txt) |
+| .NET Windows Desktop Runtime (WPF/Windows Forms) | 10.0.13 | [license](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/WindowsDesktop-LICENSE.txt); additional notices in the .NET Runtime notice file |
 | Microsoft.Toolkit.Uwp.Notifications | 7.1.3 | Copyright .NET Foundation and Contributors; [complete MIT license](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/WindowsCommunityToolkit-LICENSE.md) |
 | Microsoft.Web.WebView2 SDK / loader | 1.0.4191.47 | [Microsoft license](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/WebView2-LICENSE.txt), [notices](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/WebView2-NOTICE.txt) |
 | Emoji.Wpf | 0.3.4 | Copyright 2017–2021 Sam Hocevar; [WTFPL version 2](https://github.com/xXkurotoriXx/jjogae-windows-releases/blob/main/licenses/Emoji-Wpf-LICENSE.txt) |
